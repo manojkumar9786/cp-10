@@ -60,6 +60,22 @@ const authenticateToken = (request, response, next) => {
   }
 };
 
+const convertStateObject = (dbObject) => {
+  return {
+    stateId: dbObject.state_id,
+    stateName: dbObject.state_name,
+    population: dbObject.population,
+  };
+};
+
+const convertStateIdObject = (dbObject) => {
+  return {
+    stateId: dbObject.state_id,
+    stateName: dbObject.state_name,
+    population: dbObject.population,
+  };
+};
+
 //User Login Api
 app.post("/login/", async (request, response) => {
   const { username, password } = request.body;
@@ -74,7 +90,7 @@ app.post("/login/", async (request, response) => {
     if (comparePassword === true) {
       const payload = { username: username };
       const jwtToken = jwt.sign(payload, "MY_SECRET_TOKEN");
-      response.send(jwtToken);
+      response.send({ jwtToken });
       // response.send("Login success!");
     } else {
       response.status(400);
@@ -88,7 +104,10 @@ app.get("/states/", authenticateToken, async (request, response) => {
   const getStateQuery = `
     SELECT * FROM state;`;
   const state = await db.all(getStateQuery);
-  response.send(state);
+  const getState = state.map((eachItem) => {
+    return convertStateObject(eachItem);
+  });
+  response.send(getState);
 });
 
 //API 3
@@ -96,7 +115,7 @@ app.get("/states/:stateId/", authenticateToken, async (request, response) => {
   const { stateId } = request.params;
   const getState = `SELECT * FROM state WHERE state_id = ${stateId};`;
   const state = await db.get(getState);
-  response.send(state);
+  response.send(convertStateIdObject(state));
 });
 
 //API 4
@@ -117,6 +136,17 @@ app.post("/districts/", authenticateToken, async (request, response) => {
 });
 
 //API 5
+const convertDistrictIdObject = (dbObject) => {
+  return {
+    districtId: dbObject.district_id,
+    districtName: dbObject.district_name,
+    stateId: dbObject.state_id,
+    cases: dbObject.cases,
+    cured: dbObject.cured,
+    active: dbObject.active,
+    deaths: dbObject.deaths,
+  };
+};
 app.get(
   "/districts/:districtId",
   authenticateToken,
@@ -124,7 +154,7 @@ app.get(
     const { districtId } = request.params;
     const getDistrict = `SELECT * FROM district WHERE district_id=${districtId};`;
     const district = await db.get(getDistrict);
-    response.send(district);
+    response.send(convertDistrictIdObject(district));
   }
 );
 
